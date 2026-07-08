@@ -56,8 +56,8 @@ FORMATO ESTRICTO DE RESPUESTA:
 
     recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;  // Permite grabar más de 30 segundos
+    recognition.interimResults = true;  // Muestra texto mientras hablas
     recognition.maxAlternatives = 1;
 
     recognition.onstart = function() {
@@ -66,15 +66,25 @@ FORMATO ESTRICTO DE RESPUESTA:
       setStatus('Escuchando...', '#34c759');
     };
 
+    let finalTranscript = '';
+    
     recognition.onresult = function(event) {
-      const transcript = event.results[0][0].transcript;
-      console.log('Texto reconocido:', transcript);
+      let interimTranscript = '';
       
-      if (transcript.trim()) {
-        processUserInput(transcript);
-      } else {
-        showError('No entendí, intenta de nuevo.');
-        updateUIListening(false);
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      
+      console.log('Texto reconocido:', finalTranscript || interimTranscript);
+      
+      if (finalTranscript.trim()) {
+        processUserInput(finalTranscript.trim());
+        finalTranscript = '';
       }
     };
 
