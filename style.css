@@ -103,6 +103,14 @@ html, body {
   border-bottom-right-radius: 4px;
 }
 
+/* Estilo para texto interim (mientras habla) */
+.message.user.interim {
+  background-color: rgba(0, 122, 255, 0.5);
+  color: white;
+  opacity: 0.8;
+  font-style: italic;
+}
+
 .message.ai-english {
   background-color: #e5e5ea;
   color: #1c1c1e;

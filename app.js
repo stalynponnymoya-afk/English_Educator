@@ -103,36 +103,48 @@ FORMATO OBLIGATORIO:
 
     recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
-    recognition.continuous = true;  // Permite grabar más de 30 segundos
-    recognition.interimResults = true;  // Muestra texto mientras hablas
+    recognition.continuous = true;       // Sigue escuchando hasta que el usuario pare
+    recognition.interimResults = true;   // Muestra texto mientras hablas
     recognition.maxAlternatives = 1;
+    
+    // Variables para acumular transcripción
+    let fullTranscript = '';
+    let interimText = null;
+    let lastFinalIndex = 0;
 
     recognition.onstart = function() {
       isListening = true;
+      fullTranscript = '';
+      lastFinalIndex = 0;
       updateUIListening(true);
       setStatus('Escuchando...', '#34c759');
     };
 
-    let finalTranscript = '';
-    
     recognition.onresult = function(event) {
       let interimTranscript = '';
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
+          fullTranscript += transcript + ' ';
+          lastFinalIndex = i;
         } else {
           interimTranscript += transcript;
         }
       }
       
-      console.log('Texto reconocido:', finalTranscript || interimTranscript);
-      
-      if (finalTranscript.trim()) {
-        processUserInput(finalTranscript.trim());
-        finalTranscript = '';
+      // Mostrar texto en tiempo real en la UI
+      if (interimText) {
+        interimText.textContent = fullTranscript + interimTranscript;
+      } else if (fullTranscript || interimTranscript) {
+        interimText = document.createElement('div');
+        interimText.className = 'message user interim';
+        interimText.textContent = fullTranscript + interimTranscript;
+        chatArea.appendChild(interimText);
+        chatArea.scrollTop = chatArea.scrollHeight;
       }
+      
+      console.log('Texto reconocido:', fullTranscript || interimTranscript);
     };
 
     let restartTimeout = null;
@@ -179,6 +191,13 @@ FORMATO OBLIGATORIO:
       isListening = false;
       shouldAutoRestart = false;
       if (restartTimeout) clearTimeout(restartTimeout);
+      
+      // Remover texto interim si existe
+      if (interimText) {
+        interimText.remove();
+        interimText = null;
+      }
+      
       updateUIListening(false);
       
       let errorMsg = 'Error de micrófono.';
@@ -195,6 +214,21 @@ FORMATO OBLIGATORIO:
     };
 
     recognition.onend = function() {
+      // Remover texto interim y mostrar el final
+      if (interimText) {
+        interimText.remove();
+        interimText = null;
+      }
+      
+      // Si hay texto acumulado, enviarlo
+      if (fullTranscript.trim()) {
+        const finalText = fullTranscript.trim();
+        addMessage('user', finalText);
+        sendToAI(finalText);
+        fullTranscript = '';
+        lastFinalIndex = 0;
+      }
+      
       if (shouldAutoRestart && isListening) {
         // Auto-reiniciar si estaba en modo continuo
         setTimeout(() => {
