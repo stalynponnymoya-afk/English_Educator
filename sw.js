@@ -1,11 +1,11 @@
 const CACHE_NAME = 'speak-ai-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.webmanifest',
-  '/icon.png'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.webmanifest',
+  './icon.png'
 ];
 
 self.addEventListener('install', (event) => {
