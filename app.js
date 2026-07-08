@@ -107,9 +107,50 @@ REGLAS ESTRICTAS:
       }
     };
 
+    let restartTimeout = null;
+    let shouldAutoRestart = false;
+    
+    function scheduleRestart() {
+      // Auto-reiniciar después de 25 segundos para evitar timeout del navegador
+      if (restartTimeout) clearTimeout(restartTimeout);
+      restartTimeout = setTimeout(() => {
+        if (isListening && recognition) {
+          try {
+            recognition.stop();
+            setTimeout(() => {
+              if (isListening) {
+                recognition.start();
+                console.log('Reconocimiento reiniciado automáticamente');
+              }
+            }, 100);
+          } catch (e) {
+            console.log('Re-inicio programado para cuando sea posible');
+          }
+        }
+      }, 25000); // 25 segundos
+    }
+    
     recognition.onerror = function(event) {
       console.error('Error de reconocimiento:', event.error);
+      
+      if (event.error === 'no-speech' && shouldAutoRestart) {
+        // Silenciosamente reiniciar si estaba en modo auto-reinicio
+        setTimeout(() => {
+          if (isListening) {
+            try { recognition.start(); } catch(e) {}
+          }
+        }, 100);
+        return;
+      }
+      
+      if (event.error === 'aborted') {
+        // No mostrar error si fue abortado intencionalmente
+        return;
+      }
+      
       isListening = false;
+      shouldAutoRestart = false;
+      if (restartTimeout) clearTimeout(restartTimeout);
       updateUIListening(false);
       
       let errorMsg = 'Error de micrófono.';
@@ -117,24 +158,26 @@ REGLAS ESTRICTAS:
         case 'not-allowed':
           errorMsg = 'Permiso de micrófono denegado. Permite el acceso en tu navegador.';
           break;
-        case 'no-speech':
-          errorMsg = 'No detecté voz. Habla más claro.';
-          break;
         case 'network':
           errorMsg = 'Error de red. Verifica tu conexión.';
           break;
-        case 'aborted':
-          // No mostrar error si fue abortado intencionalmente
-          return;
       }
       showError(errorMsg);
       setStatus('Listo', '#007aff');
     };
 
     recognition.onend = function() {
-      isListening = false;
-      updateUIListening(false);
-      setStatus('Listo', '#007aff');
+      if (shouldAutoRestart && isListening) {
+        // Auto-reiniciar si estaba en modo continuo
+        setTimeout(() => {
+          try { recognition.start(); } catch(e) {}
+        }, 100);
+      } else {
+        isListening = false;
+        shouldAutoRestart = false;
+        updateUIListening(false);
+        setStatus('Listo', '#007aff');
+      }
     };
   }
 
@@ -149,6 +192,8 @@ REGLAS ESTRICTAS:
     }
 
     try {
+      shouldAutoRestart = true; // Activar modo continuo
+      scheduleRestart(); // Iniciar timer de auto-reinicio
       recognition.start();
     } catch (e) {
       console.error('Error al iniciar reconocimiento:', e);
@@ -157,6 +202,8 @@ REGLAS ESTRICTAS:
 
   function stopListening() {
     if (recognition && isListening) {
+      shouldAutoRestart = false;
+      if (restartTimeout) clearTimeout(restartTimeout);
       recognition.stop();
     }
   }
