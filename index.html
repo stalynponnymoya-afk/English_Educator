@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#007aff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>English Speaking AI</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>🎙️ Speak AI</h1>
+      <button id="settings-btn" class="icon-btn" title="Configuración">⚙️</button>
+    </header>
+
+    <div id="chat-area" class="chat-area">
+      <div class="welcome-message">
+        <p><strong>¡Bienvenido!</strong></p>
+        <p>Presiona el botón azul y habla en inglés. La IA te corregirá y responderá.</p>
+        <p class="hint">Primero configura tu API key de Groq.</p>
+      </div>
+    </div>
+
+    <div id="status-bar" class="status-bar hidden">
+      <span class="status-indicator"></span>
+      <span id="status-text">Escuchando...</span>
+    </div>
+
+    <div class="input-area">
+      <button id="speak-btn" class="speak-btn" disabled>
+        <span class="mic-icon">🎙️</span>
+        <span class="btn-text">Mantén presionado y habla</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal de Configuración -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Configuración</h2>
+      <label for="api-key-input">API Key de Groq:</label>
+      <input type="password" id="api-key-input" placeholder="gsk_...">
+      <p class="help-text">Obtén tu key gratis en <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></p>
+      <div class="modal-actions">
+        <button id="save-settings" class="btn-primary">Guardar</button>
+        <button id="close-settings" class="btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then((reg) => console.log('SW registrado:', reg.scope))
+          .catch((err) => console.log('SW error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
